@@ -6,13 +6,20 @@
 
 extern crate native_windows_gui as nwg;
 extern crate native_windows_derive as nwd;
+extern crate directories;
 
 use nwd::NwgUi;
 use nwg::NativeUi;
+use directories::BaseDirs;
+use mslnk::ShellLink;
 
+use std::fs::create_dir_all;
 use std::path::Path;
+use std::{io, env};
 
 const WINDOW_SIZE: (i32, i32) = (500, 350);
+// Get program's file name
+const PROGRAM_NAME: &str = env!("CARGO_PKG_NAME");
 
 #[derive(Default, NwgUi)]
 pub struct BasicApp {
@@ -48,9 +55,23 @@ impl BasicApp {
         for file_path in drop.files() {
             let file_name = Path::new(& file_path).file_name().unwrap().to_str().unwrap();
 
-            println!("{}", file_name);
+            self.store_file(&file_path, file_name).unwrap();
+            println!("Added {}", file_name);
         }
 
+    }
+
+    fn store_file(&self, file_path: &str, file_name: &str) -> io::Result<()> {
+        /* Store shortcut to a given file in %APPDATA% */
+        let base_dirs = BaseDirs::new().ok_or(io::Error::new(io::ErrorKind::Other, "Could not get base dirs"))?;
+        let config_data = Path::new(&base_dirs.config_dir()).join(PROGRAM_NAME);
+
+        create_dir_all(&config_data)?;
+        let shortcut_path = Path::new(&config_data).join(file_name).with_extension("lnk");
+        // TODO: get new version of mslnk to convert '.unwrap()' to '?'
+        let sl = ShellLink::new(file_path).unwrap();
+        sl.create_lnk(shortcut_path).unwrap();
+        Ok(())
     }
 }
 
