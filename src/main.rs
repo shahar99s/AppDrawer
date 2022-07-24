@@ -1,9 +1,3 @@
-/*!
-    A very simple application that show your name in a message box.
-    See `basic` for the version without the derive macro
-*/
-
-
 extern crate native_windows_gui as nwg;
 extern crate native_windows_derive as nwd;
 extern crate directories;
@@ -17,11 +11,10 @@ use std::path::Path;
 use std::{io, env};
 
 const WINDOW_SIZE: (i32, i32) = (500, 350);
-// Get program's file name
 const PROGRAM_NAME: &str = env!("CARGO_PKG_NAME");
 
 #[derive(Default, NwgUi)]
-pub struct BasicApp {
+pub struct GameManagerApp {
     #[nwg_resource(source_file: Some("./assets/cog.ico"))]
     icon: nwg::Icon,
 
@@ -30,11 +23,11 @@ pub struct BasicApp {
 
     #[nwg_control(size: WINDOW_SIZE, position: (300, 300), title: "Game Manager", flags: "WINDOW|RESIZABLE|VISIBLE", accept_files: true, icon: Some(&data.icon))]
     #[nwg_events(
-        OnResize: [BasicApp::resize],
-        OnWindowMaximize: [BasicApp::resize], 
-        OnWindowMinimize: [BasicApp::resize],
+        OnResize: [GameManagerApp::resize],
+        OnWindowMaximize: [GameManagerApp::resize], 
+        OnWindowMinimize: [GameManagerApp::resize],
         OnWindowClose: [nwg::stop_thread_dispatch()], 
-        OnFileDrop: [BasicApp::drop_files(SELF, EVT_DATA)],
+        OnFileDrop: [GameManagerApp::drop_files(SELF, EVT_DATA)],
      )]
     window: nwg::Window,
 
@@ -42,7 +35,7 @@ pub struct BasicApp {
     img: nwg::ImageFrame,
 }
 
-impl BasicApp {
+impl GameManagerApp {
     fn resize(&self) {
         let (x, y) = self.window.size();
         self.img.set_size(x, y);
@@ -94,6 +87,6 @@ impl BasicApp {
 fn main() {
     nwg::init().expect("Failed to init Native Windows GUI");
 
-    let _app = BasicApp::build_ui(Default::default()).expect("Failed to build UI");
+    let _app = GameManagerApp::build_ui(Default::default()).expect("Failed to build UI");
     nwg::dispatch_thread_events();
 }
