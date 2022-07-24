@@ -11,9 +11,8 @@ extern crate directories;
 use nwd::NwgUi;
 use nwg::NativeUi;
 use directories::BaseDirs;
-use mslnk::ShellLink;
 
-use std::fs::create_dir_all;
+use std::fs::{create_dir_all, self};
 use std::path::Path;
 use std::{io, env};
 
@@ -55,22 +54,39 @@ impl BasicApp {
         for file_path in drop.files() {
             let file_name = Path::new(& file_path).file_name().unwrap().to_str().unwrap();
 
-            self.store_file(&file_path, file_name).unwrap();
+            self.store_file(Path::new(&file_path), file_name).unwrap();
             println!("Added {}", file_name);
         }
 
     }
 
-    fn store_file(&self, file_path: &str, file_name: &str) -> io::Result<()> {
-        /* Store shortcut to a given file in %APPDATA% */
+    /* Store shortcut to a given file in %APPDATA% */
+    fn store_file(&self, file_path: &Path, file_name: &str) -> io::Result<()> {
         let base_dirs = BaseDirs::new().ok_or(io::Error::new(io::ErrorKind::Other, "Could not get base dirs"))?;
         let config_data = Path::new(&base_dirs.config_dir()).join(PROGRAM_NAME);
 
         create_dir_all(&config_data)?;
-        let shortcut_path = Path::new(&config_data).join(file_name).with_extension("lnk");
-        // TODO: get new version of mslnk to convert '.unwrap()' to '?'
-        let sl = ShellLink::new(file_path).unwrap();
-        sl.create_lnk(shortcut_path).unwrap();
+        let shortcut_path = config_data.join(file_name).with_extension("lnk");
+        if shortcut_path.exists() || shortcut_path.with_extension("url").exists() {
+            return Ok(());
+        }
+
+        match file_path.extension() {
+            Some(extension) => {
+                println!("{}", extension.to_str().unwrap());
+                match extension.to_str() {
+                    Some("url") => {
+                        fs::copy(file_path, config_data.join(file_name))?;
+                    }
+                    _ => {
+                        fs::hard_link(file_path, shortcut_path)?;
+                    }
+                }
+            }
+            None => {
+                fs::hard_link(file_path, shortcut_path)?;
+            }
+        }
         Ok(())
     }
 }
