@@ -1,5 +1,5 @@
-# GameManager
-Lightweight game manager to organize your games
+# AppDrawer
+Lightweight app to organize your apps and specifically games
 
 
 Why I abandoned this project:
